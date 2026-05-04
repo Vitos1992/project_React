@@ -2,11 +2,11 @@ const API_KEY = import.meta.env.VITE_TMDB_API_KEY || '1acfe39edd6e8959aa7d77b59f
 const BASE_URL = 'https://api.themoviedb.org/3';
 const LANGUAGE = 'uk-UA';
 
-// Module-level cache for credits to reduce redundant API calls
+//Кеш на рівні модулів для кредитів, що дозволяє зменшити кількість зайвих викликів API
 const creditsCache = new Map();
 
 /**
- * Builds a full TMDB API URL.
+ * Створює повну URL-адресу API TMDB.
  */
 function buildUrl(path, params = '') {
     if (!API_KEY) {
@@ -18,7 +18,7 @@ function buildUrl(path, params = '') {
 }
 
 /**
- * Generic request helper with error handling.
+ * Універсальний помічник для обробки запитів з функцією обробки помилок.
  */
 async function request(url) {
     const response = await fetch(url);
@@ -29,41 +29,56 @@ async function request(url) {
 }
 
 /**
- * Fetches a list of movies with 10 items per page.
- * Note: TMDB returns 20 items per page, so we split each TMDB page into two "virtual" pages.
+ * Виводить список фільмів із 10 елементами на сторінці.
+ * Підтримує пошук, фільтрування за жанром та фільтрування за рейтингом.
  */
-export async function fetchMovieList(page = 1) {
-    // TMDB page 1 contains items 1-20 (our pages 1 and 2)
-    // TMDB page 2 contains items 21-40 (our pages 3 and 4)
+export async function fetchMovieList(page = 1, filters = {}) {
+    const { query, genreId, minRating } = filters;
     const apiPage = Math.ceil(page / 2);
-    const data = await request(buildUrl('/movie/popular', `&page=${apiPage}`));
+    
+    let path = '/movie/popular';
+    let params = `&page=${apiPage}`;
+
+    if (query) {
+        path = '/search/movie';
+        params += `&query=${encodeURIComponent(query)}`;
+    } else if (genreId || minRating) {
+        path = '/discover/movie';
+        if (genreId) params += `&with_genres=${genreId}`;
+        if (minRating) params += `&vote_average.gte=${minRating}`;
+    }
+
+    const data = await request(buildUrl(path, params));
 
     const sliceStart = ((page - 1) * 10) % 20;
     const pageItems = data.results.slice(sliceStart, sliceStart + 10);
 
-    // PERFORMANCE NOTE (Ref: todo.md item 9):
-    // We are NOT fetching directors here for every movie.
-    // Doing 'await fetchMovieDirector(movie.id)' inside map would cause an "N+1" problem:
-    // 1 request for the list + 10 separate requests for directors = 11 requests for one page.
-    // This is slow, wastes bandwidth, and hits API rate limits.
     const movies = pageItems.map((movie) => ({
         id: movie.id,
         title: movie.title || movie.original_title,
         releaseYear: movie.release_date ? movie.release_date.split('-')[0] : 'Н/Д',
-        director: null, // Displayed as "Unknown" in UI for list view
-        posterPath: movie.poster_path
+        director: null,
+        posterPath: movie.poster_path,
+        voteAverage: movie.vote_average
     }));
 
     return {
         movies,
         currentPage: page,
-        // TMDB limits many endpoints to 500 pages (10,000 items)
         totalPages: Math.min(data.total_pages * 2, 1000)
     };
 }
 
 /**
- * Fetches the director name for a specific movie.
+ * Отримує список жанрів фільмів.
+ */
+export async function fetchGenres() {
+    const data = await request(buildUrl('/genre/movie/list'));
+    return data.genres;
+}
+
+/**
+ * Отримує ім'я режисера певного фільму.
  */
 async function fetchMovieDirector(movieId) {
     if (creditsCache.has(movieId)) {
@@ -85,7 +100,7 @@ async function fetchMovieDirector(movieId) {
 }
 
 /**
- * Fetches full details for a movie, including credits.
+ * Виводить повну інформацію про фільм, включаючи список учасників.
  */
 export async function fetchMovieDetail(movieId) {
     const detail = await request(buildUrl(`/movie/${movieId}`, '&append_to_response=credits'));

@@ -4,7 +4,7 @@ import MovieDetailPage from './pages/MovieDetailPage.jsx';
 
 function App() {
     return (
-        <BrowserRouter>
+        <BrowserRouter basename="/project_React/">
             <div className="app-shell">
                 <header className="app-header">
                     <Link to="/" className="brand">

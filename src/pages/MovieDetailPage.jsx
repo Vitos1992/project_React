@@ -33,15 +33,17 @@ function MovieDetailPage() {
 
             {movie && (
                 <div className="detail-card">
-                    {movie.posterPath ? (
-                        <img
-                            className="detail-poster"
-                            src={`https://image.tmdb.org/t/p/w500${movie.posterPath}`}
-                            alt={movie.title}
-                        />
-                    ) : (
-                        <div className="detail-poster placeholder">Без зображення</div>
-                    )}
+                    <div className='detail-poster_block'>
+                        {movie.posterPath ? (
+                            <img
+                                className="detail-poster"
+                                src={`https://image.tmdb.org/t/p/w500${movie.posterPath}`}
+                                alt={movie.title}
+                            />
+                        ) : (
+                            <div className="detail-poster placeholder">Без зображення</div>
+                        )}
+                    </div>
 
                     <div className="detail-info">
                         <h2>{movie.title}</h2>

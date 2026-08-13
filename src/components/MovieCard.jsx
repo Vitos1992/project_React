@@ -5,6 +5,8 @@ function MovieCard({ movie }) {
         ? `https://image.tmdb.org/t/p/w500${movie.posterPath}`
         : null;
 
+    console.log(movie);
+
     return (
         <Link to={`/movie/${movie.id}`} className="movie-card">
             {posterUrl ? (
@@ -26,6 +28,9 @@ function MovieCard({ movie }) {
             </div>
         </Link>
     );
+    
 }
+
+
 
 export default MovieCard;

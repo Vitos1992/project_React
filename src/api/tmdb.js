@@ -53,14 +53,17 @@ export async function fetchMovieList(page = 1, filters = {}) {
     const sliceStart = ((page - 1) * 10) % 20;
     const pageItems = data.results.slice(sliceStart, sliceStart + 10);
 
-    const movies = pageItems.map((movie) => ({
-        id: movie.id,
-        title: movie.title || movie.original_title,
-        releaseYear: movie.release_date ? movie.release_date.split('-')[0] : 'Н/Д',
-        director: null,
-        posterPath: movie.poster_path,
-        voteAverage: movie.vote_average
-    }));
+    const movies = pageItems.map((movie) => {
+        return ({
+            id: movie.id,
+            title: movie.title || movie.original_title,
+            releaseYear: movie.release_date ? movie.release_date.split('-')[0] : 'Н/Д',
+            //director: await fetchMovieDirector(movie.id),
+            director: null,
+            posterPath: movie.poster_path,
+            voteAverage: movie.vote_average
+        })
+    });
 
     return {
         movies,
@@ -81,8 +84,11 @@ export async function fetchGenres() {
  * Отримує ім'я режисера певного фільму.
  */
 async function fetchMovieDirector(movieId) {
+    console.log('start');
     if (creditsCache.has(movieId)) {
+        console.log('before');
         return creditsCache.get(movieId);
+        console.log('after');
     }
 
     try {
@@ -90,6 +96,8 @@ async function fetchMovieDirector(movieId) {
         // TMDB 'job' is always in English regardless of the 'language' parameter
         const director = credits.crew.find((person) => person.job === 'Director');
         const name = director?.name || 'Невідомий';
+
+        console.log('director', director);
 
         creditsCache.set(movieId, name);
         return name;

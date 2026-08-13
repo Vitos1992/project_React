@@ -29,7 +29,7 @@ function HomePage() {
 
     const handleFilterChange = (newFilters) => {
         setFilters(newFilters);
-        setCurrentPage(1); // Reset to first page on filter change
+        setCurrentPage(1); // Повернутися на першу сторінку після зміни фільтра
     };
 
     return (
